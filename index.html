@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NU7 Wearable Demo</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.155.0/build/three.module.js"
+    }
+  }
+  </script>
+
+  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .page-title {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #1e293b;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      pointer-events: none;
+    }
+    
+    @media (max-width: 768px) {
+      .page-title {
+        font-size: 1.2rem;
+        top: 15px;
+        left: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+
+  <div class="page-title">NU7 DEMO</div>
+  
+  <div id="overlay" class="overlay">Loading 3D Character... 0%</div>
+
+  <div id="scene-container"></div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>

@@ -95,9 +95,10 @@ function createWallTexture() {
   return new THREE.CanvasTexture(canvas);
 }
 
-const wallTex = createWallTexture();
+// Load background image for the rear wall
+const textureLoader = new THREE.TextureLoader();
+const wallTex = textureLoader.load('/image.jpg');
 wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping;
-wallTex.repeat.set(1, 1);
 
 const wall = new THREE.Mesh(
   new THREE.PlaneGeometry(20, 8),
@@ -106,10 +107,60 @@ const wall = new THREE.Mesh(
 wall.position.set(0, 3.6, -10);
 scene.add(wall);
 
-// Large floor (studio floor)
+// Large floor (studio floor) with visible markings
+function createFloorTexture() {
+  const size = 2048;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  
+  // base floor color
+  ctx.fillStyle = '#e9e2d0';
+  ctx.fillRect(0, 0, size, size);
+  
+  // grid lines (muted dark)
+  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+  ctx.lineWidth = 2;
+  const spacing = 128;  // grid spacing
+  for (let i = 0; i <= size; i += spacing) {
+    // vertical lines
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, size);
+    ctx.stroke();
+    
+    // horizontal lines
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(size, i);
+    ctx.stroke();
+  }
+  
+  // center cross (slightly darker)
+  ctx.strokeStyle = 'rgba(127, 184, 176, 0.2)';  // sage tint
+  ctx.lineWidth = 4;
+  const center = size / 2;
+  ctx.beginPath();
+  ctx.moveTo(center, 0);
+  ctx.lineTo(center, size);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(0, center);
+  ctx.lineTo(size, center);
+  ctx.stroke();
+  
+  return new THREE.CanvasTexture(canvas);
+}
+
+const floorTexture = createFloorTexture();
+floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+floorTexture.repeat.set(1, 1);
+
 const studioFloor = new THREE.Mesh(
   new THREE.PlaneGeometry(40, 40),
-  new THREE.MeshStandardMaterial({ color: PALETTE.floor, roughness: 0.95 })
+  new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.95 })
 );
 studioFloor.rotation.x = -Math.PI / 2;
 studioFloor.position.y = 0;
@@ -142,7 +193,7 @@ matPlane.rotation.x = -Math.PI / 2;
 matPlane.position.set(0, 0.01, 0.2);
 scene.add(matPlane);
 
-// Softer NU7 branded decal placed on the wall behind the avatar
+// NU7 branded decal with bold black border and orange fill
 function createBrandingTexture(text) {
   const size = 1024;
   const canvas = document.createElement('canvas');
@@ -153,33 +204,31 @@ function createBrandingTexture(text) {
   // transparent background so it looks like a decal
   ctx.clearRect(0, 0, size, size);
 
-  // circular mark
+  // NU7 text positioned higher with bold black border and orange fill
   const cx = size / 2;
-  const cy = size / 2 - 40;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 160, 0, Math.PI * 2);
-  ctx.fillStyle = '#7fb8b0';
-  ctx.fill();
+  const cy = size / 2 - 180;  // positioned higher
+  const fontSize = 200;
 
-  // NU7 text - muted and soft
-  ctx.fillStyle = '#fffaf6';
-  ctx.font = 'bold 140px serif';
+  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('NU7', cx, cy + 8);
-
-  // subtext
-  ctx.fillStyle = '#6b6b6b';
-  ctx.font = '36px sans-serif';
-  ctx.fillText('YOGA STUDIO', cx, cy + 260);
+  
+  // Black border (stroke) for text
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 8;
+  ctx.strokeText('nu7.ai', cx, cy);
+  
+  // Orange fill for text
+  ctx.fillStyle = '#eee8e8ff';  // dark orange
+  ctx.fillText('nu7.ai', cx, cy);
 
   return new THREE.CanvasTexture(canvas);
 }
 
 const brandTexture = createBrandingTexture('NU7');
-const brandMat = new THREE.MeshBasicMaterial({ map: brandTexture, transparent: true, opacity: 0.95 });
-const brandPlane = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 2.4), brandMat);
-brandPlane.position.set(0, 2.1, -9.9);
+const brandMat = new THREE.MeshBasicMaterial({ map: brandTexture, transparent: true, opacity: 1.0 });
+const brandPlane = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 2.6), brandMat);
+brandPlane.position.set(0, 3.2, -9.9);  // positioned higher for visibility
 scene.add(brandPlane);
 
 
@@ -254,12 +303,12 @@ loader.load(
 ========================================================= */
 
 const imuToBone = {
-  IMU1: "mixamorig1LeftFoot",
-  IMU2: "mixamorig1RightFoot",
+  IMU4: "mixamorig1LeftFoot",
+  IMU6: "mixamorig1RightFoot",
   IMU3: "mixamorig1LeftUpLeg",
-  IMU4: "mixamorig1LeftLeg",
+  IMU1: "mixamorig1LeftLeg",
   IMU5: "mixamorig1RightUpLeg",
-  IMU6: "mixamorig1RightLeg",
+  IMU2: "mixamorig1RightLeg",
 };
 
 /* =========================================================

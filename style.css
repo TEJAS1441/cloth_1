@@ -2,7 +2,7 @@ body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   background: linear-gradient(180deg, #f6f6f4 0%, #e6efe8 100%);
-  color: #0f172a;
+  color: #f9fafe;
 }
 
 #scene-container {

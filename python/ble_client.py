@@ -1,8 +1,6 @@
 import asyncio
 import datetime
 import os
-import sys
-# import structdevice_names
 import struct
 import logging
 from bleak import BleakClient, BleakScanner

@@ -8,6 +8,9 @@ import { OrbitControls } from "https://unpkg.com/three@0.155.0/examples/jsm/cont
 
 let skeleton = null;
 
+// studio lights that specifically illuminate the loaded model
+let modelStudioLights = [];
+
 // FIX: must be global
 const bones = {};
 const boneRestQuat = {};
@@ -506,6 +509,79 @@ scene.add(createDumbbellRack(-8.0, -7.5, 3, 5));
 
 // RIGHT SIDE: Dumbbell rack from right pillar to back corner
 scene.add(createDumbbellRack(8.0, -7.5, 3, 5));
+
+function removeModelStudioLights() {
+  modelStudioLights.forEach(l => {
+    if (l.target) scene.remove(l.target);
+    scene.remove(l);
+  });
+  modelStudioLights = [];
+}
+
+/**
+ * Add soft studio lighting focused on the given model.
+ * Creates a warm key spotlight, cool fill, and a subtle rim/back light.
+ */
+function addModelStudioLights(model) {
+  removeModelStudioLights();
+
+  // compute model center
+  const bbox = new THREE.Box3().setFromObject(model);
+  const center = bbox.getCenter(new THREE.Vector3());
+  const size = bbox.getSize(new THREE.Vector3());
+
+  // KEY SPOT: warm, soft, casts gentle shadows
+  const key = new THREE.SpotLight(0xfff1e6, 1.1, 18, Math.PI / 8, 0.6, 1.5);
+  key.position.set(center.x + Math.max(1.2, size.x), center.y + Math.max(2.2, size.y * 1.2), center.z + Math.max(1.5, size.z));
+  key.target = new THREE.Object3D();
+  key.target.position.copy(center);
+  scene.add(key.target);
+  key.castShadow = true;
+  key.shadow.bias = -0.0005;
+  key.shadow.mapSize.set(2048, 2048);
+  scene.add(key);
+  modelStudioLights.push(key);
+
+  // FILL LIGHT: cool, low-intensity to soften shadows
+  const fill = new THREE.PointLight(0xdfefff, 0.55, 14, 2.0);
+  fill.position.set(center.x - Math.max(1.6, size.x), center.y + Math.max(1.0, size.y * 0.6), center.z + Math.max(0.8, size.z * 0.5));
+  scene.add(fill);
+  modelStudioLights.push(fill);
+
+  // RIM LIGHT (back): subtle colored rim to separate model from background
+  const rim = new THREE.DirectionalLight(0xffe6f0, 0.35);
+  rim.position.set(center.x, center.y + Math.max(1.8, size.y), center.z - Math.max(3.0, size.z * 2.0));
+  rim.castShadow = false;
+  scene.add(rim);
+  modelStudioLights.push(rim);
+
+  // SOFT UNDER-FILL: low warm point below to simulate reflected floor light
+  const under = new THREE.PointLight(0xffefdf, 0.18, 8, 2.0);
+  under.position.set(center.x, Math.max(0.3, center.y * 0.1), center.z + 0.5);
+  scene.add(under);
+  modelStudioLights.push(under);
+
+// place the soft highlight plane at the ceiling level (not near the model waist)
+  const planeMat = new THREE.MeshStandardMaterial({
+   color: 0xffffff,
+    emissive: 0xfffbf2,
+    emissiveIntensity: 0.12,
+    roughness: 1
+  });
+  // make plane large enough to cover model but match ceiling orientation
+  const planeW = Math.max(2.5, size.x * 1.6);
+  const planeH = Math.max(1.2, size.z * 1.2);
+  const lightPlane = new THREE.Mesh(new THREE.PlaneGeometry(planeW, planeH), planeMat);
+  // align with ceiling (ceiling.rotation.x = Math.PI/2); keep plane horizontal and facing down
+  lightPlane.rotation.x = -Math.PI / 2;
+  // place just below the ceiling to simulate recessed area light
+  const ceilingY = (typeof ceiling !== 'undefined' && ceiling.position) ? ceiling.position.y : 8.0;
+  lightPlane.position.set(center.x, ceilingY - 0.06, center.z);
+  lightPlane.renderOrder = 999;
+  lightPlane.material.depthWrite = false;
+  scene.add(lightPlane);
+  modelStudioLights.push(lightPlane);
+}
 
 // ===== FLOWER POTS WITH PLANTS: Both sides for greenery =====
 function createFlowerPot(x, z, height = 1.2, leafCount = 6, potColor = 0xc9a876) {
@@ -1059,7 +1135,7 @@ function frameScene(object = scene, padding = 1.2) {
 }
 
 loader.load(
-  "/avatar/avatar_2.glb",
+  "/avatar/avatar_3.glb",
   (gltf) => {
     const model = gltf.scene;
     scene.add(model);
@@ -1079,6 +1155,9 @@ loader.load(
 
     // Frame the model + studio so avatar and surrounding studio are visible
     frameScene(model);
+
+    // add model-focused studio lighting for better photoreal look
+    addModelStudioLights(model);
 
     modelLoaded = true;
     if (overlay) overlay.innerText = "Model loaded — waiting for backend...";
